@@ -14,12 +14,6 @@ datasource db {
     url      = env("DATABASE_URL")
 }
 
-model Example {
-    id        String   @id @default(cuid())
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
-}
-
 // Necessary for Next auth
 model Account {
     id                String  @id @default(cuid())
@@ -48,13 +42,16 @@ model Session {
 }
 
 model User {
-    id            String    @id @default(cuid())
-    name          String?
-    email         String?   @unique
+    id            String    @unique @default(cuid())
+    name          String
+    email         String    @unique
     emailVerified DateTime?
-    image         String?
+    image         String
     accounts      Account[]
     sessions      Session[]
+    Player        Player?
+
+    @@id([id, name, email, image])
 }
 
 model VerificationToken {
@@ -63,4 +60,83 @@ model VerificationToken {
     expires    DateTime
 
     @@unique([identifier, token])
+}
+
+model Player {
+    id         Int                @id @default(autoincrement())
+    userId     String             @unique
+    name       String
+    email      String
+    imageSrc   String
+    balance    Int
+    leagues    PlayersToLeagues[]
+    user       User               @relation(fields: [userId, name, email, imageSrc], references: [id, name, email, image], onDelete: Cascade)
+    playerBets PlayerBets[]
+
+    @@unique([userId, name, email, imageSrc])
+}
+
+model League {
+    id      Int                @id @default(autoincrement())
+    name    String
+    players PlayersToLeagues[]
+}
+
+model PlayersToLeagues {
+    Player   Player @relation(fields: [playerId], references: [id])
+    playerId Int
+    League   League @relation(fields: [leagueId], references: [id])
+    leagueId Int
+
+    @@id([playerId, leagueId])
+}
+
+model DateBets {
+    date DateTime @id
+    bets Bet[]
+}
+
+model Bet {
+    id            Int            @id @default(autoincrement())
+    label         String
+    type          String
+    type1x2       Type1X2?
+    typeOverUnder TypeOverUnder?
+    DateBets      DateBets?      @relation(fields: [dateBetsDate], references: [date])
+    dateBetsDate  DateTime?
+}
+
+model Type1X2 {
+    id    Int   @id @default(autoincrement())
+    one   Float
+    x     Float
+    two   Float
+    bet   Bet?  @relation(fields: [betId], references: [id])
+    betId Int   @unique
+}
+
+model TypeOverUnder {
+    id    Int   @id @default(autoincrement())
+    over  Float
+    under Float
+    Bet   Bet?  @relation(fields: [betId], references: [id])
+    betId Int   @unique
+}
+
+model PlayerBets {
+    date       DateTime
+    player     Player      @relation(fields: [playerId], references: [id])
+    playerId   Int
+    placedBets PlacedBet[]
+
+    @@id([date, playerId])
+}
+
+model PlacedBet {
+    id             Int         @id
+    choice         String
+    amount         Int
+    PlayerBets     PlayerBets? @relation(fields: [playerBetsDate, playerId], references: [date, playerId])
+    playerBetsDate DateTime?
+    playerId       Int
 }

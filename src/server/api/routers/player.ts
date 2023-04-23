@@ -4,16 +4,10 @@ import { createTRPCRouter, publicProcedure } from "../trpc";
 
 export const playerRouter = createTRPCRouter({
   getPlayer: publicProcedure
-    .input(z.object({ uid: z.string() }))
-    .query(({ input }) => {
-      return {
-        user: {
-          uid: input.uid,
-          imageSrc: "",
-          name: "Tobias Lindgren",
-          email: "tuubbaas@gmail.com",
-          balance: "10000",
-        },
-      };
+    .input(z.object({ userId: z.string() }))
+    .query(async ({ input, ctx }) => {
+      return await ctx.prisma.player.findUnique({
+        where: { userId: input.userId },
+      });
     }),
 });

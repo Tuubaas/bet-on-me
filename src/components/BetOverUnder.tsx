@@ -1,5 +1,7 @@
+import { type BetOverUnder, type PlacedBet } from "types";
+
 const BetOverUnder: React.FC<{
-  bet: IGeneralBet;
+  bet: BetOverUnder;
   placedBet: PlacedBet;
 }> = ({ bet, placedBet }) => {
   return (
@@ -12,7 +14,7 @@ const BetOverUnder: React.FC<{
           }`}
         >
           <span>Över</span>
-          <span>{bet.odds.over}</span>
+          <span>{bet.typeOverUnder.over}</span>
         </div>
         <div
           className={`flex flex-col ${
@@ -20,7 +22,7 @@ const BetOverUnder: React.FC<{
           }`}
         >
           <span>Under</span>
-          <span>{bet.odds.under}</span>
+          <span>{bet.typeOverUnder.under}</span>
         </div>
         <span className="ml-4">{placedBet?.amount} kr</span>
       </div>

@@ -1,4 +1,4 @@
 export enum BetType {
-  Type1X2 = "1X2",
+  Type1X2 = "1x2",
   TypeOverUnder = "over/under",
 }

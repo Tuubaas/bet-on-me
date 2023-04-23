@@ -2,11 +2,17 @@ import { useState } from "react";
 import dayjs from "dayjs";
 import { type NextPage } from "next";
 import Head from "next/head";
-import { useFieldArray, useForm, FormProvider } from "react-hook-form";
+import { FormProvider, useFieldArray, useForm } from "react-hook-form";
 
 import { api } from "../utils/api";
-import { BetType } from "../utils/enums";
 import { Bet1X2Admin, BetOverUnderAdmin } from "../components";
+import {
+  type Bet,
+  type BetOverUnder,
+  type Bet1X2,
+  type TypeOverUnder,
+  type Type1X2,
+} from "types";
 
 dayjs().format();
 
@@ -28,7 +34,7 @@ const AdminPage: NextPage = () => {
       <main>
         Chosen date: {queryDate}
         {betsResponse?.data?.bets && (
-          <Form queryDate={queryDate} bets={betsResponse.data?.bets} />
+          <BetAdminForm date={queryDate} bets={betsResponse?.data?.bets} />
         )}
       </main>
     </>
@@ -37,101 +43,101 @@ const AdminPage: NextPage = () => {
 
 export default AdminPage;
 
-const Form: React.FC<{ queryDate: string; bets: IGeneralBet[] }> = ({
-  queryDate,
-  bets,
-}) => {
-  const mutation = api.bets.setBets.useMutation();
+interface FormInput {
+  bets: Bet[];
+}
 
-  const attributes = useForm({
+const BetAdminForm = ({ bets, date }: { bets: Bet[]; date: string }) => {
+  const methods = useForm<FormInput>({
     defaultValues: { bets },
-    mode: "onChange",
+  });
+  const { fields, append, remove } = useFieldArray({
+    control: methods.control,
+    name: "bets",
   });
 
-  const { control, handleSubmit } = attributes;
-  const { fields, append, remove } = useFieldArray({ control, name: "bets" });
-
-  const onSubmit = handleSubmit((data) => {
-    const submitResponse = mutation.mutate({
-      date: queryDate,
-      bets: data.bets,
-    });
-    console.log(submitResponse);
-  });
-
-  const createBet = (type: BetType): IGeneralBet => {
-    const id = Math.random().toString().slice(2);
-    if (type === BetType.Type1X2) {
-      return {
-        id,
-        type,
-        label: "",
-        odds: { one: 1, x: 1, two: 1 },
+  const getBetTypes = (
+    type: string,
+    id: number
+  ): [Type1X2 | null, TypeOverUnder | null] => {
+    if (type === "1x2") {
+      const newBet: Type1X2 = {
+        id: new Date().getTime(),
+        one: 0,
+        x: 0,
+        two: 0,
+        betId: id,
       };
-    } else if (type === BetType.TypeOverUnder) {
-      return {
-        id,
-        type,
-        label: "",
-        odds: { over: 1, under: 1 },
+      return [newBet, null];
+    } else if (type === "over/under") {
+      const newBet: TypeOverUnder = {
+        id: new Date().getTime(),
+        over: 0,
+        under: 0,
+        betId: id,
       };
+      return [null, newBet];
+    } else {
+      return [null, null];
     }
-    return {
-      id,
-      type: BetType.TypeOverUnder,
-      label: "",
-      odds: { over: 1, under: 1 },
-    };
   };
 
-  const addBet = (type: BetType) => {
-    const newBet = createBet(type);
+  const generateUniqueId = (): number => Math.floor(Math.random() * 1e16);
+
+  const handleAddBet = (type: string) => {
+    const id = generateUniqueId();
+    const [type1x2, typeOverUnder]: [Type1X2 | null, TypeOverUnder | null] =
+      getBetTypes(type, id);
+    const newBet: Bet = {
+      id,
+      type,
+      label: "",
+      type1x2,
+      typeOverUnder,
+      dateBetsDate: date,
+    };
     append(newBet);
   };
 
-  const removeBet = (index: number) => {
+  const handleRemoveBet = (index: number) => {
     remove(index);
   };
+
   /* eslint-disable @typescript-eslint/no-misused-promises */
   return (
-    <>
-      <FormProvider {...attributes}>
-        <form onSubmit={onSubmit}>
+    <div>
+      <button onClick={() => handleAddBet("1x2")}>Add 1x2 Bet</button>
+      <button onClick={() => handleAddBet("over/under")}>
+        Add Over/Under Bet
+      </button>
+      <FormProvider {...methods}>
+        <form onSubmit={methods.handleSubmit((data) => console.log(data))}>
           {fields.map((field, index) => {
-            if (field.type === "over/under") {
-              const bet = field as IBetOverUnder;
-              return (
-                <BetOverUnderAdmin
-                  key={index}
-                  bet={bet}
-                  index={index}
-                  removeBet={() => removeBet(index)}
-                />
-              );
-            } else if (field.type === "1X2") {
-              const bet = field as IBet1X2;
-              return (
-                <Bet1X2Admin
-                  key={index}
-                  bet={bet}
-                  index={index}
-                  removeBet={() => removeBet(index)}
-                />
-              );
-            }
+            return (
+              <div key={field.id}>
+                <h3>Bet #{index + 1}</h3>
+                {field.type === "over/under" ? (
+                  <BetOverUnderAdmin
+                    key={field.id}
+                    bet={field as unknown as BetOverUnder}
+                    index={index}
+                    onRemove={() => handleRemoveBet(index)}
+                  />
+                ) : (
+                  <Bet1X2Admin
+                    key={field.id}
+                    bet={field as unknown as Bet1X2}
+                    index={index}
+                    onRemove={() => handleRemoveBet(index)}
+                  />
+                )}
+              </div>
+            );
           })}
-          <button className="mt-4" type="submit">
-            Submit
-          </button>
+          <button type="submit">Save</button>
         </form>
       </FormProvider>
-      <button className="mr-4" onClick={() => addBet(BetType.Type1X2)}>
-        Add 1X2 bet
-      </button>
-      <button onClick={() => addBet(BetType.TypeOverUnder)}>
-        Add Over/Under bet
-      </button>
-    </>
+    </div>
   );
   /* eslint-enable @typescript-eslint/no-misused-promises */
 };

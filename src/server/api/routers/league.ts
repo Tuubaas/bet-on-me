@@ -4,21 +4,14 @@ import { createTRPCRouter, publicProcedure } from "../trpc";
 
 export const leagueRouter = createTRPCRouter({
   getPlayerLeagues: publicProcedure
-    .input(z.object({ uid: z.string() }))
-    .query(({ input }) => {
-      return {
-        leagues: [
-          {
-            id: "league-id",
-            name: "Test League",
-            podium: [
-              { name: "first place" },
-              { name: "second place" },
-              { name: "third place" },
-            ],
-          },
-        ],
-        uid: input.uid,
-      };
+    .input(z.object({ leagueIds: z.array(z.number()) }))
+    .query(async ({ input, ctx }) => {
+      const response = await ctx.prisma.league.findMany({
+        where: {
+          id: { in: input.leagueIds },
+        },
+      });
+
+      return response;
     }),
 });

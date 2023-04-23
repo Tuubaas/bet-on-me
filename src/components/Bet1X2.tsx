@@ -1,5 +1,7 @@
+import { type Bet1X2, type PlacedBet } from "types";
+
 const Bet1X2: React.FC<{
-  bet: IGeneralBet;
+  bet: Bet1X2;
   placedBet: PlacedBet;
 }> = ({ bet, placedBet }) => {
   return (
@@ -12,7 +14,7 @@ const Bet1X2: React.FC<{
           }`}
         >
           <span>1</span>
-          <span>{bet.odds.one}</span>
+          <span>{bet.type1x2.one}</span>
         </div>
         <div
           className={`flex flex-col ${
@@ -20,7 +22,7 @@ const Bet1X2: React.FC<{
           }`}
         >
           <span>X</span>
-          <span>{bet.odds.x}</span>
+          <span>{bet.type1x2.x}</span>
         </div>
         <div
           className={`flex flex-col ${
@@ -28,7 +30,7 @@ const Bet1X2: React.FC<{
           }`}
         >
           <span>2</span>
-          <span>{bet.odds.two}</span>
+          <span>{bet.type1x2.two}</span>
         </div>
         <span className="ml-4">{placedBet?.amount} kr</span>
       </div>

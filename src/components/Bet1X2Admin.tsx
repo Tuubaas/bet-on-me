@@ -1,11 +1,14 @@
 import { useFormContext } from "react-hook-form";
+import { type Bet1X2 } from "types";
 
 const Bet1X2Admin: React.FC<{
-  bet: IBet1X2;
+  bet: Bet1X2;
   index: number;
-  removeBet: () => void;
-}> = ({ bet, index, removeBet }) => {
+  onRemove: () => void;
+}> = ({ bet, index, onRemove }) => {
   const { register } = useFormContext();
+  // console.log(bet);
+
   return (
     <div className="mb-8 flex flex-row items-center">
       <div className="flex flex-col">
@@ -21,7 +24,7 @@ const Bet1X2Admin: React.FC<{
             <label>1: </label>
             <input
               className="border"
-              defaultValue={bet.odds.one}
+              defaultValue={bet.type1x2.one}
               {...register(`${index}.odds.one`)}
             />
           </div>
@@ -29,7 +32,7 @@ const Bet1X2Admin: React.FC<{
             <label>X: </label>
             <input
               className="border"
-              defaultValue={bet.odds.x}
+              defaultValue={bet.type1x2.x}
               {...register(`${index}.odds.x`)}
             />
           </div>
@@ -37,13 +40,13 @@ const Bet1X2Admin: React.FC<{
             <label>2: </label>
             <input
               className="border"
-              defaultValue={bet.odds.two}
+              defaultValue={bet.type1x2.two}
               {...register(`${index}.odds.two`)}
             />
           </div>
         </div>
       </div>
-      <button className="ml-12" onClick={removeBet}>
+      <button className="ml-12" onClick={onRemove}>
         Remove
       </button>
     </div>

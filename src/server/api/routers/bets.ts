@@ -1,63 +1,45 @@
+import dayjs from "dayjs";
 import { z } from "zod";
 
 import { createTRPCRouter, publicProcedure } from "../trpc";
-import { BetType } from "../../../utils/enums";
 
 export const betRouter = createTRPCRouter({
   getBets: publicProcedure
     .input(z.object({ date: z.string() }))
-    .query(({ input }) => {
-      return {
-        bets: [
-          {
-            id: "1",
-            label: "This is an over/under bet",
-            type: BetType.TypeOverUnder,
-            odds: {
-              over: 2.5,
-              under: 2.5,
-            },
-          },
-          {
-            id: "2",
-            label: "This is a 1X2 bet",
-            type: BetType.Type1X2,
-            odds: {
-              one: 1.5,
-              x: 8.0,
-              two: 2.5,
-            },
-          },
-        ],
-      };
+    .query(async ({ ctx, input }) => {
+      const date = new Date(dayjs().format("YYYY-MM-DD"));
+      const response = await ctx.prisma.dateBets.findUnique({
+        include: { bets: { include: { type1x2: true, typeOverUnder: true } } },
+        where: { date: date },
+      });
+
+      console.log(response);
+
+      return response;
     }),
   getPlayerBets: publicProcedure
-    .input(z.object({ date: z.string(), uid: z.string() }))
-    .query(({ input }) => {
-      return {
-        placedBets: {
-          "1": {
-            choice: "over",
-            amount: 100,
-          },
-          "2": {
-            choice: "x",
-            amount: 300,
-          },
-        },
-      };
+    .input(z.object({ date: z.string(), uid: z.number() }))
+    .query(async ({ ctx, input }) => {
+      const testdate = new Date(dayjs().format("YYYY-MM-DD"));
+      const response = await ctx.prisma.playerBets.findUnique({
+        include: { placedBets: true },
+        where: { date_playerId: { date: testdate, playerId: input.uid } },
+      });
+      return response;
     }),
   setBets: publicProcedure
     .input(
       z.object({
         date: z.string(),
         bets: z
-          .object({ id: z.string(), label: z.string(), odds: z.any() })
+          .object({ id: z.number(), label: z.string(), odds: z.any() })
           .array(),
       })
     )
-    .mutation(({ input }) => {
-      // TODO post tot DB
-      return input.bets;
+    .mutation(async ({ ctx, input }) => {
+      for (const bet of input.bets) {
+        await ctx.prisma.bet.update({ where: { id: bet.id }, data: bet });
+      }
+      return input;
     }),
 });

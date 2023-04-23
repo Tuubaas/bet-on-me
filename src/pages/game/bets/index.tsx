@@ -11,25 +11,38 @@ import {
   Bet1X2Input,
 } from "../../../components";
 import { type FieldValues, useForm, type SubmitHandler } from "react-hook-form";
+import {
+  type Bet,
+  type BetOverUnder as BetOverUnderType,
+  type Bet1X2 as Bet1X2Type,
+  type PlacedBet,
+} from "types";
 
 dayjs().format();
 
 const BetsPage: NextPage<{ session: Session }> = ({ session }) => {
   const [inEditState, setInEditState] = useState(false);
-  const [queryDate, setQueryDate] = useState(dayjs().format("DD MMMM"));
+  const [queryDate, setQueryDate] = useState<string>(dayjs().format("DD MMMM"));
 
   const betsResponse = api.bets.getBets.useQuery({ date: queryDate });
   const playerBetsResponse = api.bets.getPlayerBets.useQuery({
     date: queryDate,
-    uid: "test-uid",
+    uid: 123,
   });
 
-  let bets: IGeneralBet[] = [];
-  let playerBets: IGeneralPlacedBets | Record<string, never> = {};
+  let bets: Bet[] = [];
+  let playerBets: PlacedBet[] | Record<string, never> = {};
   if (betsResponse.data) {
     bets = betsResponse.data.bets;
   }
+
+  if (playerBetsResponse.error) {
+    console.log(playerBetsResponse.error);
+  }
+
   if (playerBetsResponse.data) {
+    console.log(playerBetsResponse.data);
+
     playerBets = playerBetsResponse.data.placedBets;
   }
   if (bets.length < 1) {
@@ -38,6 +51,7 @@ const BetsPage: NextPage<{ session: Session }> = ({ session }) => {
   const toggleEditState = () => {
     setInEditState((currentState) => !currentState);
   };
+  console.log(playerBets);
 
   return (
     <>
@@ -49,7 +63,7 @@ const BetsPage: NextPage<{ session: Session }> = ({ session }) => {
         />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <main className="flex flex-col text-bom-black">
+      <main className="text-bom-black flex flex-col">
         Chosen Date: {queryDate}
         <div>
           {inEditState ? (
@@ -65,13 +79,17 @@ const BetsPage: NextPage<{ session: Session }> = ({ session }) => {
                   return (
                     <BetOverUnder
                       key={i}
-                      bet={bet}
+                      bet={bet as BetOverUnderType}
                       placedBet={playerBets[bet.id]}
                     />
                   );
                 } else if (bet.type === "1X2") {
                   return (
-                    <Bet1X2 key={i} bet={bet} placedBet={playerBets[bet.id]} />
+                    <Bet1X2
+                      key={i}
+                      bet={bet as Bet1X2Type}
+                      placedBet={playerBets[bet.id]}
+                    />
                   );
                 }
               })}
@@ -89,8 +107,8 @@ const BetsPage: NextPage<{ session: Session }> = ({ session }) => {
 export default BetsPage;
 
 const EditBets: React.FC<{
-  bets: IGeneralBet[] | [];
-  playerBets: IGeneralPlacedBets | Record<string, never>;
+  bets: Bet[] | [];
+  playerBets: PlacedBet[] | Record<string, never>;
   toggleEditState: () => void;
 }> = ({ bets, playerBets, toggleEditState }) => {
   const { register, handleSubmit } = useForm({ defaultValues: playerBets });
